@@ -14,5 +14,6 @@ include("utilities.jl")
 include("bibtex.jl")
 include("entry.jl")
 include("lossless.jl")
+include("rules.jl")
 
 end # module
