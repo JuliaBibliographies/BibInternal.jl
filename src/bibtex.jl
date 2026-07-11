@@ -90,3 +90,44 @@ function make_bibtex_entry(id, fields; check = :error)
     end
     return Entry(id, fields)
 end
+
+function _normalize_biblatex_date!(fields)
+    date = get(fields, "date", "")
+    isempty(date) && return fields
+    m = match(r"^(\d{4})(?:-(\d{1,2})(?:-(\d{1,2}))?)?", date)
+    isnothing(m) && return fields
+    haskey(fields, "year") || (fields["year"] = something(m.captures[1], ""))
+    haskey(fields, "month") || (fields["month"] = something(m.captures[2], ""))
+    haskey(fields, "day") || (fields["day"] = something(m.captures[3], ""))
+    return fields
+end
+
+function _normalize_biblatex_aliases!(fields)
+    aliases = Dict(
+        "journaltitle" => "journal",
+        "eprinttype" => "archiveprefix",
+        "eprintclass" => "primaryclass",
+        "location" => "address",
+    )
+    for (alias, canonical) in aliases
+        if haskey(fields, alias) && !haskey(fields, canonical)
+            fields[canonical] = fields[alias]
+        end
+    end
+    return fields
+end
+
+"""
+    make_biblatex_entry(id::String, fields::Fields; check = :error)
+
+Make an entry using BibLaTeX field aliases and date conventions while
+preserving source-specific fields that are not part of the canonical view.
+"""
+function make_biblatex_entry(id, fields; check = :error)
+    fields = Dict(lowercase(k) => v for (k, v) in fields)
+    validation = validate_fields(fields, BIBLATEX_RULESET; id)
+    handle_validation(validation, check)
+    _normalize_biblatex_aliases!(fields)
+    _normalize_biblatex_date!(fields)
+    return Entry(id, fields)
+end
