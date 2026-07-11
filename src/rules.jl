@@ -156,7 +156,7 @@ const BIBLATEX_RULESET = EntryRuleSet(
     version = v"1.0.0",
     aliases = _BIBLATEX_ALIASES,
     rules = Dict{String, EntryRule}(
-        "article" => _entry_rule("article", ["author", "title", "journaltitle", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "article" => _entry_rule("article", ["author", "title", "journal", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
         "book" => _entry_rule("book", [("author", "editor"), "title", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
         "inbook" => _entry_rule("inbook", [("author", "editor"), "title", "booktitle", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
         "incollection" => _entry_rule("incollection", ["author", "title", "booktitle", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
@@ -302,4 +302,37 @@ function handle_validation(result::ValidationResult, level)
         end
     end
     return result
+end
+
+@testitem "Rulesets and validation" tags=[:rules] begin
+    import BibInternal
+
+    valid = Dict(
+        "_type" => "article",
+        "author" => "Lovelace, Ada",
+        "journal" => "Notes",
+        "title" => "Computing",
+        "year" => "1843",
+    )
+    result = BibInternal.validate_fields(valid, BibInternal.BIBTEX_RULESET; id = "lovelace1843")
+    @test result.ok
+    @test isempty(result.diagnostics)
+
+    missing = copy(valid)
+    delete!(missing, "journal")
+    result = BibInternal.validate_fields(missing, BibInternal.BIBTEX_RULESET; id = "missing")
+    @test !result.ok
+    @test length(result.diagnostics) == 1
+    @test result.diagnostics[1].code == :missing_required_field
+    @test result.diagnostics[1].field == "journal"
+
+    biblatex = Dict(
+        "_type" => "article",
+        "author" => "Lovelace, Ada",
+        "journaltitle" => "Notes",
+        "title" => "Computing",
+        "date" => "1843",
+    )
+    result = BibInternal.validate_fields(biblatex, BibInternal.BIBLATEX_RULESET; id = "lovelace1843")
+    @test result.ok
 end

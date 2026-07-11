@@ -128,3 +128,29 @@ function Base.getproperty(entry::LosslessEntry, name::Symbol)
     end
     return getproperty(getfield(entry, :canonical), name)
 end
+
+@testitem "Lossless model" tags=[:lossless] begin
+    import BibInternal
+
+    fields = Dict(
+        "_type" => "article",
+        "author" => "Lovelace, Ada",
+        "journal" => "Notes",
+        "title" => "Computing",
+        "year" => "1843",
+    )
+    entry = BibInternal.Entry("lovelace1843", copy(fields))
+    raw = BibInternal.RawEntry(
+        kind = "article",
+        key = "lovelace1843",
+        fields = [BibInternal.RawField(name = "title", value = "Computing", raw = "title = {Computing}")],
+        raw = "@article{lovelace1843,...}",
+    )
+    wrapped = BibInternal.LosslessEntry(entry, raw)
+
+    @test BibInternal.canonical(wrapped) === entry
+    @test BibInternal.raw(wrapped) === raw
+    @test wrapped.id == "lovelace1843"
+    @test wrapped.title == "Computing"
+    @test isempty(BibInternal.diagnostics(wrapped))
+end
