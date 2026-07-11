@@ -335,4 +335,25 @@ end
     )
     result = BibInternal.validate_fields(biblatex, BibInternal.BIBLATEX_RULESET; id = "lovelace1843")
     @test result.ok
+
+    entry = BibInternal.make_biblatex_entry(
+        "doe2024",
+        Dict(
+            "_type" => "online",
+            "author" => "Doe, Jane",
+            "title" => "Dataset",
+            "date" => "2024-03-15",
+            "url" => "https://example.test/data",
+            "eprinttype" => "arXiv",
+            "eprintclass" => "cs.DL",
+            "location" => "Paris",
+        ),
+    )
+    @test entry.type == "online"
+    @test entry.date == BibInternal.Date("15", "03", "2024")
+    @test entry.access.url == "https://example.test/data"
+    @test entry.eprint.archive_prefix == "arXiv"
+    @test entry.eprint.primary_class == "cs.DL"
+    @test entry.in.address == "Paris"
+    @test entry.fields["date"] == "2024-03-15"
 end
