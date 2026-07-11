@@ -14,7 +14,18 @@ This package provides an internal format to translate from/to other bibliographi
 All entries depend on an abstract super type `AbstractEntry`.
 One generic entry `GenericEntry` is available to make entries without any specific rules.
 
-Currently, only one set of entries following the BibTeX rules is available. *Required* and *optional* BibTeX fields are checked by the constructor.
+Versioned rule sets are available for traditional BibTeX and for the BibLaTeX
+entry types currently represented by the canonical model. Required fields and
+alternatives such as `author`/`editor`, `date`/`year`, and `doi`/`eprint`/`url`
+are validated. BibLaTeX's more expressive date syntax is preserved losslessly;
+only complete or partial ISO calendar dates (`YYYY`, `YYYY-MM`, and
+`YYYY-MM-DD`) are projected onto the canonical `Date` fields.
+
+The BibLaTeX rule set currently supports `article`, `book`, `inbook`,
+`incollection`, `inproceedings`, `online`, `proceedings`, `report`, `thesis`,
+`unpublished`, and `misc`. Other BibLaTeX entry types produce an
+`unknown_entry_type` diagnostic until their canonical representation is
+defined.
 
 Pull Requests to add more entries (or update the BibTeX rules) are welcome.
 

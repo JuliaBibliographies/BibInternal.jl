@@ -137,14 +137,15 @@ end
         "author" => "Lovelace, Ada",
         "journal" => "Notes",
         "title" => "Computing",
-        "year" => "1843",
+        "year" => "1843"
     )
     entry = BibInternal.Entry("lovelace1843", copy(fields))
     raw = BibInternal.RawEntry(
         kind = "article",
         key = "lovelace1843",
-        fields = [BibInternal.RawField(name = "title", value = "Computing", raw = "title = {Computing}")],
-        raw = "@article{lovelace1843,...}",
+        fields = [BibInternal.RawField(
+            name = "title", value = "Computing", raw = "title = {Computing}")],
+        raw = "@article{lovelace1843,...}"
     )
     wrapped = BibInternal.LosslessEntry(entry, raw)
 
@@ -153,4 +154,28 @@ end
     @test wrapped.id == "lovelace1843"
     @test wrapped.title == "Computing"
     @test isempty(BibInternal.diagnostics(wrapped))
+
+    span = BibInternal.SourceSpan(
+        file = "refs.bib", start_line = 1, start_column = 1, end_line = 3, end_column = 2
+    )
+    diagnostic = BibInternal.Diagnostic(
+        code = :duplicate_field,
+        message = "Duplicate title",
+        span = span,
+        entry_id = "lovelace1843",
+        field = "title"
+    )
+    wrapped_with_diagnostic = BibInternal.LosslessEntry(entry, raw, [diagnostic])
+    document = BibInternal.BibliographyDocument(
+        format = :bibtex,
+        entries = [wrapped_with_diagnostic],
+        blocks = [BibInternal.RawBlock(
+            kind = :comment, raw = "@comment{kept}", span = span)],
+        source = "refs.bib"
+    )
+    @test BibInternal.canonical(entry) === entry
+    @test only(BibInternal.diagnostics(wrapped_with_diagnostic)) === diagnostic
+    @test isempty(BibInternal.diagnostics(document))
+    @test only(document.blocks).raw == "@comment{kept}"
+    @test diagnostic.span.start_line == 1
 end

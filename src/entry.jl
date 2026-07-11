@@ -55,9 +55,9 @@ function Name(str)
                 first = aux[1]
                 mark_in += 1
                 for s in aux[2:(end - 1)]
-                    mark_in += 1
                     islowercase(s[1]) && break
-                    middle *= " $s"
+                    middle = isempty(middle) ? s : "$middle $s"
+                    mark_in += 1
                 end
                 for s in reverse(aux[mark_in:mark_out])
                     islowercase(s[1]) && break
@@ -419,9 +419,12 @@ end
         @test BibInternal.Date("", "4", "1805") !== BibInternal.Date("", "5", "1805")
         @test BibInternal.Date("3", "4", "1805") !== BibInternal.Date("4", "4", "1805")
 
-        @test_skip BibInternal.Date("", "May", "1805") == BibInternal.Date("", "5", "1805")
-        @test_skip BibInternal.Date("1th", "5", "1805") !==
-                   BibInternal.Date("1", "5", "1805")
+        # Date is a lossless container: textual values are not normalized implicitly.
+        @test BibInternal.Date("", "May", "1805") != BibInternal.Date("", "5", "1805")
+        @test !(BibInternal.Date("", "May", "1805") < BibInternal.Date("", "5", "1805"))
+        @test !(BibInternal.Date("", "5", "1805") < BibInternal.Date("", "May", "1805"))
+        @test BibInternal.Date("1th", "5", "1805") !==
+              BibInternal.Date("1", "5", "1805")
 
         @test_throws ArgumentError BibInternal.Date(
             "", "", "1")<
@@ -482,5 +485,26 @@ end
         name = BibInternal.Name("Doe Jr., A. B.")
         name_expected = BibInternal.Name("", "Doe Jr.", "", "A.", "B.")
         @test name == name_expected
+    end
+
+    @testset "BibTeX name forms" begin
+        @test BibInternal.Name("Ada Lovelace") ==
+              BibInternal.Name("", "Lovelace", "", "Ada", "")
+        @test BibInternal.Name("John Ronald Reuel Tolkien") ==
+              BibInternal.Name("", "Tolkien", "", "John", "Ronald Reuel")
+        @test BibInternal.Name("Ludwig van Beethoven") ==
+              BibInternal.Name("van", "Beethoven", "", "Ludwig", "")
+        @test BibInternal.Name("von Last, First Middle") ==
+              BibInternal.Name("von", "Last", "", "First", "Middle")
+        @test BibInternal.Name("von Last, Jr., First Middle") ==
+              BibInternal.Name("von", "Last", "Jr.", "First", "Middle")
+        @test BibInternal.Name("{The Julia Project}") ==
+              BibInternal.Name("", "{The Julia Project}", "", "", "")
+        @test BibInternal.names("Doe, Jane and Smith, John") == [
+            BibInternal.Name("", "Doe", "", "Jane", ""),
+            BibInternal.Name("", "Smith", "", "John", "")
+        ]
+        @test_throws AssertionError BibInternal.Name("   ")
+        @test_throws AssertionError BibInternal.Name("Doe, Jr. Senior, Jane")
     end
 end

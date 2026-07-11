@@ -3,5 +3,5 @@
 
 ```@autodocs
 Modules = [BibInternal]
-Pages   = ["bibtex.jl"]
+Pages   = ["bibtex.jl", "rules.jl"]
 ```
