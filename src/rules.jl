@@ -18,8 +18,9 @@ struct AlternativeRequiredField <: AbstractFieldRequirement
     names::Tuple{Vararg{String}}
 end
 
-AlternativeRequiredField(names::AbstractVector{<:AbstractString}) =
+function AlternativeRequiredField(names::AbstractVector{<:AbstractString})
     AlternativeRequiredField(Tuple(String.(names)))
+end
 
 """
     EntryRule
@@ -55,13 +56,15 @@ struct ValidationResult
     diagnostics::Vector{Diagnostic}
 end
 
-ValidationResult(diagnostics::Vector{Diagnostic}) =
+function ValidationResult(diagnostics::Vector{Diagnostic})
     ValidationResult(!any(d -> d.severity == diagnostic_error, diagnostics), diagnostics)
+end
 
 _req(field::AbstractString) = RequiredField(String(field))
 _req(fields::Tuple) = AlternativeRequiredField(Tuple(String.(fields)))
 
-function _entry_rule(entry_type::String, required; optional = String[], aliases = Dict{String, String}())
+function _entry_rule(
+        entry_type::String, required; optional = String[], aliases = Dict{String, String}())
     return EntryRule(
         entry_type = entry_type,
         required = AbstractFieldRequirement[_req(r) for r in required],
@@ -100,35 +103,51 @@ const _BIBTEX_OPTIONAL_FIELDS = String[
     "type",
     "url",
     "volume",
-    "year",
+    "year"
 ]
 
 const BIBTEX_RULESET = EntryRuleSet(
     name = :BibTeX,
     version = v"1.0.0",
     rules = Dict{String, EntryRule}(
-        "article" => _entry_rule("article", ["author", "journal", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "book" => _entry_rule("book", [("author", "editor"), "publisher", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
+        "article" => _entry_rule("article", ["author", "journal", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
+        "book" => _entry_rule("book", [("author", "editor"), "publisher", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
         "booklet" => _entry_rule("booklet", ["title"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "eprint" => _entry_rule("eprint", ["author", "eprint", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "inbook" => _entry_rule("inbook", [("author", "editor"), ("chapter", "pages"), "publisher", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "incollection" => _entry_rule("incollection", ["author", "booktitle", "publisher", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "inproceedings" => _entry_rule("inproceedings", ["author", "booktitle", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
+        "eprint" => _entry_rule("eprint", ["author", "eprint", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
+        "inbook" => _entry_rule("inbook",
+            [("author", "editor"), ("chapter", "pages"), "publisher", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
+        "incollection" => _entry_rule(
+            "incollection", ["author", "booktitle", "publisher", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
+        "inproceedings" => _entry_rule(
+            "inproceedings", ["author", "booktitle", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
         "manual" => _entry_rule("manual", ["title"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "mastersthesis" => _entry_rule("mastersthesis", ["author", "school", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
+        "mastersthesis" => _entry_rule(
+            "mastersthesis", ["author", "school", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
         "misc" => _entry_rule("misc", String[]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "phdthesis" => _entry_rule("phdthesis", ["author", "school", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "proceedings" => _entry_rule("proceedings", ["title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "techreport" => _entry_rule("techreport", ["author", "institution", "title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-        "unpublished" => _entry_rule("unpublished", ["author", "note", "title"]; optional = _BIBTEX_OPTIONAL_FIELDS),
-    ),
+        "phdthesis" => _entry_rule("phdthesis", ["author", "school", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
+        "proceedings" => _entry_rule(
+            "proceedings", ["title", "year"]; optional = _BIBTEX_OPTIONAL_FIELDS),
+        "techreport" => _entry_rule(
+            "techreport", ["author", "institution", "title", "year"];
+            optional = _BIBTEX_OPTIONAL_FIELDS),
+        "unpublished" => _entry_rule(
+            "unpublished", ["author", "note", "title"]; optional = _BIBTEX_OPTIONAL_FIELDS)
+    )
 )
 
 const _BIBLATEX_ALIASES = Dict{String, String}(
     "eprinttype" => "archiveprefix",
     "eprintclass" => "primaryclass",
     "journaltitle" => "journal",
-    "location" => "address",
+    "location" => "address"
 )
 
 const _BIBLATEX_OPTIONAL_FIELDS = union(
@@ -147,7 +166,7 @@ const _BIBLATEX_OPTIONAL_FIELDS = union(
         "origdate",
         "subtitle",
         "urldate",
-        "version",
+        "version"
     ])
 )
 
@@ -156,18 +175,37 @@ const BIBLATEX_RULESET = EntryRuleSet(
     version = v"1.0.0",
     aliases = _BIBLATEX_ALIASES,
     rules = Dict{String, EntryRule}(
-        "article" => _entry_rule("article", ["author", "title", "journal", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "book" => _entry_rule("book", [("author", "editor"), "title", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "inbook" => _entry_rule("inbook", [("author", "editor"), "title", "booktitle", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "incollection" => _entry_rule("incollection", ["author", "title", "booktitle", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "inproceedings" => _entry_rule("inproceedings", ["author", "title", "booktitle", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "online" => _entry_rule("online", ["title", "url"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "proceedings" => _entry_rule("proceedings", ["title", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "report" => _entry_rule("report", ["author", "title", "type", "institution", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "thesis" => _entry_rule("thesis", ["author", "title", "type", "institution", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "unpublished" => _entry_rule("unpublished", ["author", "title", "date"]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-        "misc" => _entry_rule("misc", String[]; optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
-    ),
+        "article" => _entry_rule(
+            "article", ["author", "title", "journal", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "book" => _entry_rule("book", [("author", "editor"), "title", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "inbook" => _entry_rule(
+            "inbook", ["author", "title", "booktitle", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "incollection" => _entry_rule(
+            "incollection", ["author", "title", "booktitle", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "inproceedings" => _entry_rule(
+            "inproceedings", ["author", "title", "booktitle", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "online" => _entry_rule("online",
+            [("author", "editor"), "title", ("date", "year"), ("doi", "eprint", "url")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS),
+            aliases = _BIBLATEX_ALIASES),
+        "proceedings" => _entry_rule("proceedings", ["editor", "title", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "report" => _entry_rule(
+            "report", ["author", "title", "type", "institution", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "thesis" => _entry_rule(
+            "thesis", ["author", "title", "type", "institution", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "unpublished" => _entry_rule("unpublished", ["author", "title", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES),
+        "misc" => _entry_rule("misc", [("author", "editor"), "title", ("date", "year")];
+            optional = collect(_BIBLATEX_OPTIONAL_FIELDS), aliases = _BIBLATEX_ALIASES)
+    )
 )
 
 function _canonical_field_name(name::AbstractString, ruleset::EntryRuleSet, rule::EntryRule)
@@ -183,7 +221,9 @@ function _normalized_fields(fields::AbstractDict, ruleset::EntryRuleSet, rule::E
     return normalized
 end
 
-_entry_type(fields::AbstractDict) = lowercase(get(fields, "_type", get(fields, "type", "misc")))
+function _entry_type(fields::AbstractDict)
+    lowercase(get(fields, "_type", get(fields, "type", "misc")))
+end
 
 function _missing_requirement(requirement::RequiredField, fields)
     return isempty(get(fields, requirement.name, ""))
@@ -194,9 +234,12 @@ function _missing_requirement(requirement::AlternativeRequiredField, fields)
 end
 
 _requirement_label(requirement::RequiredField) = requirement.name
-_requirement_label(requirement::AlternativeRequiredField) = "{" * join(requirement.names, "|") * "}"
+function _requirement_label(requirement::AlternativeRequiredField)
+    "{" * join(requirement.names, "|") * "}"
+end
 
-function validate_fields(fields::AbstractDict, ruleset::EntryRuleSet; id::AbstractString = "")
+function validate_fields(
+        fields::AbstractDict, ruleset::EntryRuleSet; id::AbstractString = "")
     entry_type = _entry_type(fields)
     diagnostics = Diagnostic[]
     if !haskey(ruleset.rules, entry_type)
@@ -237,7 +280,10 @@ function entry_fields(entry::Entry)
     data = Dict{String, String}(entry.fields)
     data["_type"] = entry.type
     data["author"] = join(
-        map(n -> join(filter(!isempty, [n.particle, n.last, n.junior, n.first, n.middle]), " "), entry.authors),
+        map(
+            n -> join(
+                filter(!isempty, [n.particle, n.last, n.junior, n.first, n.middle]), " "),
+            entry.authors),
         " and "
     )
     data["booktitle"] = entry.booktitle
@@ -245,7 +291,10 @@ function entry_fields(entry::Entry)
     data["month"] = entry.date.month
     data["year"] = entry.date.year
     data["editor"] = join(
-        map(n -> join(filter(!isempty, [n.particle, n.last, n.junior, n.first, n.middle]), " "), entry.editors),
+        map(
+            n -> join(
+                filter(!isempty, [n.particle, n.last, n.junior, n.first, n.middle]), " "),
+            entry.editors),
         " and "
     )
     data["doi"] = entry.access.doi
@@ -273,11 +322,13 @@ function entry_fields(entry::Entry)
     return data
 end
 
-validate(entry::Entry, ruleset::EntryRuleSet = BIBTEX_RULESET) =
+function validate(entry::Entry, ruleset::EntryRuleSet = BIBTEX_RULESET)
     validate_fields(entry_fields(entry), ruleset; id = entry.id)
+end
 
-validate(entry::LosslessEntry, ruleset::EntryRuleSet = BIBTEX_RULESET) =
+function validate(entry::LosslessEntry, ruleset::EntryRuleSet = BIBTEX_RULESET)
     validate(entry.canonical, ruleset)
+end
 
 function validate(document::BibliographyDocument, ruleset::EntryRuleSet)
     diagnostics = copy(document.diagnostics)
@@ -312,15 +363,17 @@ end
         "author" => "Lovelace, Ada",
         "journal" => "Notes",
         "title" => "Computing",
-        "year" => "1843",
+        "year" => "1843"
     )
-    result = BibInternal.validate_fields(valid, BibInternal.BIBTEX_RULESET; id = "lovelace1843")
+    result = BibInternal.validate_fields(
+        valid, BibInternal.BIBTEX_RULESET; id = "lovelace1843")
     @test result.ok
     @test isempty(result.diagnostics)
 
     missing = copy(valid)
     delete!(missing, "journal")
-    result = BibInternal.validate_fields(missing, BibInternal.BIBTEX_RULESET; id = "missing")
+    result = BibInternal.validate_fields(
+        missing, BibInternal.BIBTEX_RULESET; id = "missing")
     @test !result.ok
     @test length(result.diagnostics) == 1
     @test result.diagnostics[1].code == :missing_required_field
@@ -331,9 +384,10 @@ end
         "author" => "Lovelace, Ada",
         "journaltitle" => "Notes",
         "title" => "Computing",
-        "date" => "1843",
+        "date" => "1843"
     )
-    result = BibInternal.validate_fields(biblatex, BibInternal.BIBLATEX_RULESET; id = "lovelace1843")
+    result = BibInternal.validate_fields(
+        biblatex, BibInternal.BIBLATEX_RULESET; id = "lovelace1843")
     @test result.ok
 
     entry = BibInternal.make_biblatex_entry(
@@ -346,8 +400,8 @@ end
             "url" => "https://example.test/data",
             "eprinttype" => "arXiv",
             "eprintclass" => "cs.DL",
-            "location" => "Paris",
-        ),
+            "location" => "Paris"
+        )
     )
     @test entry.type == "online"
     @test entry.date == BibInternal.Date("15", "03", "2024")
@@ -356,4 +410,114 @@ end
     @test entry.eprint.primary_class == "cs.DL"
     @test entry.in.address == "Paris"
     @test entry.fields["date"] == "2024-03-15"
+
+    @testset "Every rule and every requirement" begin
+        function minimal_fields(entry_type, rule)
+            fields = Dict("_type" => entry_type)
+            for requirement in rule.required
+                if requirement isa BibInternal.RequiredField
+                    fields[requirement.name] = "value"
+                else
+                    fields[first(requirement.names)] = "value"
+                end
+            end
+            return fields
+        end
+
+        for ruleset in (BibInternal.BIBTEX_RULESET, BibInternal.BIBLATEX_RULESET)
+            for (entry_type, rule) in ruleset.rules
+                fields = minimal_fields(entry_type, rule)
+                @test BibInternal.validate_fields(fields, ruleset; id = entry_type).ok
+
+                for requirement in rule.required
+                    missing = copy(fields)
+                    if requirement isa BibInternal.RequiredField
+                        delete!(missing, requirement.name)
+                    else
+                        foreach(name -> delete!(missing, name), requirement.names)
+                    end
+                    result = BibInternal.validate_fields(missing, ruleset; id = entry_type)
+                    @test !result.ok
+                    @test any(d -> d.code == :missing_required_field, result.diagnostics)
+
+                    if requirement isa BibInternal.AlternativeRequiredField
+                        for alternative in requirement.names
+                            with_alternative = copy(missing)
+                            with_alternative[alternative] = "value"
+                            @test BibInternal.validate_fields(
+                                with_alternative, ruleset; id = entry_type
+                            ).ok
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    @testset "Normalization and diagnostics" begin
+        result = BibInternal.validate_fields(
+            Dict("_type" => "unknown", "title" => "Title"),
+            BibInternal.BIBTEX_RULESET;
+            id = "bad"
+        )
+        @test !result.ok
+        @test only(result.diagnostics).code == :unknown_entry_type
+        @test only(result.diagnostics).entry_id == "bad"
+
+        uppercase = Dict(
+            "_type" => "ARTICLE",
+            "AUTHOR" => "Lovelace, Ada",
+            "JOURNALTITLE" => "Notes",
+            "TITLE" => "Computing",
+            "YEAR" => "1843"
+        )
+        @test BibInternal.validate_fields(uppercase, BibInternal.BIBLATEX_RULESET).ok
+
+        empty_title = copy(uppercase)
+        empty_title["TITLE"] = ""
+        @test !BibInternal.validate_fields(empty_title, BibInternal.BIBLATEX_RULESET).ok
+
+        warning = BibInternal.Diagnostic(
+            code = :example,
+            severity = BibInternal.diagnostic_warning,
+            message = "Example warning"
+        )
+        @test BibInternal.ValidationResult([warning]).ok
+        @test BibInternal.handle_validation(
+            BibInternal.ValidationResult([warning]), :none).ok
+        @test_logs (:warn, r"Example warning") BibInternal.handle_validation(
+            BibInternal.ValidationResult([warning]), :warn
+        )
+
+        error_diagnostic = BibInternal.Diagnostic(
+            code = :example,
+            severity = BibInternal.diagnostic_error,
+            message = "Example error",
+            suggestion = "Fix it."
+        )
+        @test_throws ErrorException BibInternal.handle_validation(
+            BibInternal.ValidationResult([error_diagnostic]), :error
+        )
+    end
+
+    @testset "Document validation" begin
+        invalid = BibInternal.Entry(
+            "invalid", Dict("_type" => "article", "author" => "Doe", "title" => "Title")
+        )
+        wrapped = BibInternal.LosslessEntry(
+            invalid, BibInternal.RawEntry(kind = "article", key = "invalid")
+        )
+        parse_diagnostic = BibInternal.Diagnostic(
+            code = :parse_warning, message = "Preserved parser warning"
+        )
+        document = BibInternal.BibliographyDocument(
+            format = :bibtex,
+            entries = [wrapped],
+            diagnostics = [parse_diagnostic]
+        )
+        result = BibInternal.validate(document, BibInternal.BIBTEX_RULESET)
+        @test !result.ok
+        @test first(result.diagnostics) === parse_diagnostic
+        @test count(d -> d.code == :missing_required_field, result.diagnostics) == 2
+    end
 end

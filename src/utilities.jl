@@ -34,3 +34,17 @@ end
 Erase extra spaces, i.e. `r"[\n\r ]+"`, from `str` and return a new string.
 """
 erase_spaces(str) = replace(str, r"[\n\r ]+" => " ")
+
+@testitem "Utilities" tags=[:utilities] begin
+    import BibInternal
+
+    @test BibInternal.space(:title) == 8
+    @test BibInternal.space(:archivePrefix) == 0
+    @test BibInternal.get_delete!(Dict("title" => "A"), "missing") == ""
+    @test BibInternal.erase_spaces("a  b\nc\rd") == "a b c d"
+    @test BibInternal.arxive_url(
+        Dict("archiveprefix" => "arXiv", "eprint" => "2401.01234")
+    ) == "https://arxiv.org/abs/2401.01234"
+    @test BibInternal.arxive_url(Dict("eprint" => "arXiv:hep-th/9901001")) ==
+          "https://arxiv.org/abs/hep-th/9901001"
+end
