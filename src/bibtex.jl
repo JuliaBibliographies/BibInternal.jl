@@ -94,7 +94,9 @@ end
 function _normalize_biblatex_date!(fields)
     date = get(fields, "date", "")
     isempty(date) && return fields
-    m = match(r"^(\d{4})(?:-(\d{1,2})(?:-(\d{1,2}))?)?", date)
+    # The canonical Date view supports complete or partial ISO calendar dates.
+    # More expressive BibLaTeX date syntax remains preserved in fields["date"].
+    m = match(r"^(\d{4})(?:-(0?[1-9]|1[0-2])(?:-(0?[1-9]|[12]\d|3[01]))?)?$", date)
     isnothing(m) && return fields
     haskey(fields, "year") || (fields["year"] = something(m.captures[1], ""))
     haskey(fields, "month") || (fields["month"] = something(m.captures[2], ""))
@@ -107,7 +109,7 @@ function _normalize_biblatex_aliases!(fields)
         "journaltitle" => "journal",
         "eprinttype" => "archiveprefix",
         "eprintclass" => "primaryclass",
-        "location" => "address",
+        "location" => "address"
     )
     for (alias, canonical) in aliases
         if haskey(fields, alias) && !haskey(fields, canonical)
@@ -130,4 +132,74 @@ function make_biblatex_entry(id, fields; check = :error)
     _normalize_biblatex_aliases!(fields)
     _normalize_biblatex_date!(fields)
     return Entry(id, fields)
+end
+
+@testitem "BibTeX and BibLaTeX constructors" tags=[:bibtex] begin
+    import BibInternal
+
+    @testset "BibTeX checking" begin
+        fields = Dict(
+            "_TYPE" => "book",
+            "EDITOR" => "Lovelace, Ada",
+            "PUBLISHER" => "Publisher",
+            "TITLE" => "Notes",
+            "YEAR" => "1843"
+        )
+        entry = BibInternal.make_bibtex_entry("book", fields)
+        @test entry.type == "book"
+        @test isempty(entry.authors)
+        @test only(entry.editors).last == "Lovelace"
+        @test_throws ErrorException BibInternal.make_bibtex_entry(
+            "bad", Dict("_type" => "article", "title" => "Incomplete")
+        )
+        @test_logs (:warn, r"missing") BibInternal.make_bibtex_entry(
+            "bad", Dict("_type" => "article", "title" => "Incomplete"); check = :warn
+        )
+        @test_logs (:warn, r"KeyError") begin
+            @test_throws KeyError BibInternal.make_bibtex_entry(
+                "bad", Dict("_type" => "software", "title" => "Program")
+            )
+        end
+    end
+
+    @testset "BibLaTeX date normalization" begin
+        base = Dict(
+            "_type" => "online",
+            "author" => "Doe, Jane",
+            "title" => "Dataset",
+            "url" => "https://example.test"
+        )
+        for (date, expected) in (
+            "2024" => BibInternal.Date("", "", "2024"),
+            "2024-3" => BibInternal.Date("", "3", "2024"),
+            "2024-03-15" => BibInternal.Date("15", "03", "2024")
+        )
+            entry = BibInternal.make_biblatex_entry(
+                date, merge(base, Dict("date" => date))
+            )
+            @test entry.date == expected
+        end
+
+        for date in ("2024-00", "2024-13", "2024-02-32", "2024-03-15junk")
+            entry = BibInternal.make_biblatex_entry(
+                date, merge(base, Dict("date" => date))
+            )
+            @test entry.date == BibInternal.Date("", "", "")
+            @test entry.fields["date"] == date
+        end
+
+        entry = BibInternal.make_biblatex_entry(
+            "canonical-wins",
+            merge(
+                base,
+                Dict(
+                    "date" => "2024",
+                    "location" => "Alias",
+                    "address" => "Canonical"
+                )
+            )
+        )
+        @test entry.in.address == "Canonical"
+        @test entry.fields["location"] == "Alias"
+    end
 end
