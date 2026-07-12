@@ -1,3 +1,11 @@
+"""
+BibInternal provides the canonical bibliography model shared by the
+bibliography stack.
+
+It keeps the core entry types, validation rules, diagnostics, and lossless
+document containers in one place so parsers and exporters can share the same
+data model.
+"""
 module BibInternal
 
 """

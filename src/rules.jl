@@ -38,6 +38,8 @@ end
     EntryRuleSet
 
 Versioned collection of entry validation rules for a bibliography format.
+The `aliases` dictionary applies before entry-specific aliases, which makes it
+easy to share canonical field names across the whole format.
 """
 Base.@kwdef struct EntryRuleSet
     name::Symbol
@@ -50,6 +52,7 @@ end
     ValidationResult
 
 Result of validating one entry or a bibliography document.
+`ok` is `true` when no diagnostic has `diagnostic_error` severity.
 """
 struct ValidationResult
     ok::Bool
@@ -238,6 +241,13 @@ function _requirement_label(requirement::AlternativeRequiredField)
     "{" * join(requirement.names, "|") * "}"
 end
 
+"""
+    validate_fields(fields::AbstractDict, ruleset::EntryRuleSet; id::AbstractString = "")
+
+Validate one field dictionary against a ruleset and return structured
+diagnostics. The input dictionary can come from a parser or from a canonical
+entry converted back to fields.
+"""
 function validate_fields(
         fields::AbstractDict, ruleset::EntryRuleSet; id::AbstractString = "")
     entry_type = _entry_type(fields)
@@ -276,6 +286,12 @@ function validate_fields(
     return ValidationResult(diagnostics)
 end
 
+"""
+    entry_fields(entry::Entry)
+
+Convert a canonical `Entry` back into a flat field dictionary. This is the
+bridge used by validation and format conversion code.
+"""
 function entry_fields(entry::Entry)
     data = Dict{String, String}(entry.fields)
     data["_type"] = entry.type
@@ -322,14 +338,29 @@ function entry_fields(entry::Entry)
     return data
 end
 
+"""
+    validate(entry::Entry, ruleset::EntryRuleSet = BIBTEX_RULESET)
+
+Validate a canonical entry against a ruleset.
+"""
 function validate(entry::Entry, ruleset::EntryRuleSet = BIBTEX_RULESET)
     validate_fields(entry_fields(entry), ruleset; id = entry.id)
 end
 
+"""
+    validate(entry::LosslessEntry, ruleset::EntryRuleSet = BIBTEX_RULESET)
+
+Validate the canonical view of a lossless entry.
+"""
 function validate(entry::LosslessEntry, ruleset::EntryRuleSet = BIBTEX_RULESET)
     validate(entry.canonical, ruleset)
 end
 
+"""
+    validate(document::BibliographyDocument, ruleset::EntryRuleSet)
+
+Validate every entry stored in a lossless bibliography document.
+"""
 function validate(document::BibliographyDocument, ruleset::EntryRuleSet)
     diagnostics = copy(document.diagnostics)
     for entry in document.entries
@@ -338,6 +369,12 @@ function validate(document::BibliographyDocument, ruleset::EntryRuleSet)
     return ValidationResult(diagnostics)
 end
 
+"""
+    handle_validation(result::ValidationResult, level)
+
+Apply a validation policy. `:error` raises on errors, `:warn` logs warnings,
+and `:none` returns the result untouched.
+"""
 function handle_validation(result::ValidationResult, level)
     level in (:none, nothing, false) && return result
     for diagnostic in result.diagnostics
