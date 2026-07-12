@@ -1,3 +1,6 @@
+import Pkg
+Pkg.develop(path = joinpath(@__DIR__, ".."))
+Pkg.instantiate()
 using Documenter, BibInternal
 
 makedocs(

@@ -14,6 +14,7 @@ end
     SourceSpan
 
 Optional source location for raw bibliography content and diagnostics.
+The span uses 1-based inclusive coordinates.
 """
 Base.@kwdef struct SourceSpan
     file::String = ""
@@ -44,8 +45,11 @@ end
 """
     RawField
 
-Lossless representation of a parsed field. `name` and `value` contain the
-interpreted field pair, while `raw` preserves the source representation.
+Lossless representation of a parsed field.
+
+`name` and `value` contain the interpreted field pair, while `raw` preserves
+the source representation. `span` and `diagnostics` are optional metadata
+collected by parsers that keep source locations.
 """
 Base.@kwdef struct RawField
     name::String
@@ -116,9 +120,26 @@ Base.@kwdef struct BibliographyDocument
     metadata::Dict{Symbol, Any} = Dict{Symbol, Any}()
 end
 
+"""
+    canonical(entry)
+
+Return the canonical `Entry` view of an entry-like object.
+"""
 canonical(entry::Entry) = entry
 canonical(entry::LosslessEntry) = entry.canonical
+
+"""
+    raw(entry)
+
+Return the raw source representation attached to a lossless entry.
+"""
 raw(entry::LosslessEntry) = entry.raw
+
+"""
+    diagnostics(entry)
+
+Return the diagnostics attached to a lossless entry or document.
+"""
 diagnostics(entry::LosslessEntry) = entry.diagnostics
 diagnostics(document::BibliographyDocument) = document.diagnostics
 
