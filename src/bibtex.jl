@@ -86,7 +86,7 @@ function make_bibtex_entry(id, fields; check = :error)
         message = "Entry $id is missing the " *
                   foldl(((x, y) -> x * ", " * y), errors) *
                   " field(s)."
-        check == :error ? (@error message) : (@warn message)
+        check == :error ? (error(message)) : (@warn message)
     end
     return Entry(id, fields)
 end

@@ -347,25 +347,28 @@ function Base.isless(a::BibInternal.Date, b::BibInternal.Date)
     month_format = !issubset(a.month, numbers) || !issubset(b.month, numbers)
     not_valid_month = empty_month || month_format
 
-    if !not_valid_month
-        a_m = parse(Int, a.month)
-        b_m = parse(Int, b.month)
-    end
-
     empty_day = isempty(a.day) || isempty(b.day)
     day_format = !issubset(a.day, numbers) || !issubset(b.day, numbers)
     not_valid_day = empty_day || day_format
-
-    if !not_valid_day
-        a_d = parse(Int, a.day)
-        b_d = parse(Int, b.day)
-    end
 
     if a_y == b_y
         if not_valid_month
             return false
         else
-            return a_m == b_m ? !not_valid_day && a_d < b_d : a_m < b_m
+            a_m = parse(Int, a.month)
+            b_m = parse(Int, b.month)
+
+            if a_m != b_m
+                return a_m < b_m
+            end
+
+            if not_valid_day
+                return false
+            end
+
+            a_d = parse(Int, a.day)
+            b_d = parse(Int, b.day)
+            return a_d < b_d
         end
     end
 
