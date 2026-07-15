@@ -1,9 +1,8 @@
-[![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://Humans-of-Julia.github.io/BibInternal.jl/dev)
-[![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://Humans-of-Julia.github.io/BibInternal.jl/stable)
-[![Build Status](https://github.com/Humans-of-Julia/BibInternal.jl/workflows/CI/badge.svg)](https://github.com/Humans-of-Julia/BibInternal.jl/actions)
-[![codecov](https://codecov.io/gh/Humans-of-Julia/BibInternal.jl/branch/master/graph/badge.svg?token=zkneHUR45j)](https://codecov.io/gh/Humans-of-Julia/BibInternal.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaBibliographies.github.io/BibInternal.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaBibliographies.github.io/BibInternal.jl/dev)
+[![Build Status](https://github.com/JuliaBibliographies/BibInternal.jl/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/JuliaBibliographies/BibInternal.jl/actions/workflows/ci.yml?query=branch%3Amaster)
+[![Coverage](https://codecov.io/gh/JuliaBibliographies/BibInternal.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaBibliographies/BibInternal.jl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Discord chat](https://img.shields.io/discord/762167454973296644.svg?logo=discord&colorB=7289DA&style=flat-square)](https://discord.gg/7KC28q98nP)
 
 # BibInternal.jl
 
@@ -18,8 +17,8 @@ Currently, only one set of entries following the BibTeX rules is available. *Req
 
 Pull Requests to add more entries (or update the BibTeX rules) are welcome.
 
-Discussions are welcome either on this GitHub repository or on the `#modern-academics` channel of [Humans of Julia](https://humansofjulia.org/) (to join the Discord server, please click the `chat` badge above).
+Discussions are welcome on this GitHub repository.
 
 ## Packages using BibInternal.jl
-- [BibParser.jl](https://github.com/Humans-of-Julia/BibParser.jl) : A package to parse bibliography files
-- [Bibliography.jl](https://github.com/Humans-of-Julia/Bibliography.jl) : A wrapper package to translate from/to different bibliographic formats such as BibTeX, [StaticWebPages.jl](https://github.com/Humans-of-Julia/StaticWebPages.jl), and [DocumenterCitations.jl](https://github.com/ali-ramadhan/DocumenterCitations.jl).
+- [BibParser.jl](https://github.com/JuliaBibliographies/BibParser.jl) : A package to parse bibliography files
+- [Bibliography.jl](https://github.com/JuliaBibliographies/Bibliography.jl) : A wrapper package to translate from/to different bibliographic formats such as BibTeX, [StaticWebPages.jl](https://github.com/Humans-of-Julia/StaticWebPages.jl), and [DocumenterCitations.jl](https://github.com/JuliaDocs/DocumenterCitations.jl).

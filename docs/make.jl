@@ -3,9 +3,10 @@ using Documenter, BibInternal
 makedocs(
     sitename = "BibInternal.jl",
     authors = "Jean-François BAFFIER",
-    repo = "https://github.com/Humans-of-Julia/BibInternal.jl/blob/{commit}{path}#L{line}",
     format = Documenter.HTML(
-        prettyurls = get(ENV, "CI", nothing) == "true"
+        prettyurls = true,
+        canonical = "https://juliabibliographies.github.io/BibInternal.jl",
+        edit_link = "master"
     ),
     pages = [
         "Entries" => "index.md",
@@ -14,4 +15,5 @@ makedocs(
     ]
 )
 
-deploydocs(; repo = "github.com/Humans-of-Julia/BibInternal.jl.git", devbranch = "master")
+deploydocs(;
+    repo = "github.com/JuliaBibliographies/BibInternal.jl.git", devbranch = "master")
