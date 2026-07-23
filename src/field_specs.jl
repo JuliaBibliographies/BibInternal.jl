@@ -3,7 +3,7 @@
 
 Format-independent description of a canonical bibliography field. Parsers and
 exporters own source-format mappings; this catalog only describes the semantic
-field exposed to shared consumers such as Bibliography Studio.
+field exposed to downstream consumers.
 """
 Base.@kwdef struct FieldSpec
     name::String
