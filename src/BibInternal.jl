@@ -22,6 +22,8 @@ include("utilities.jl")
 include("bibtex.jl")
 include("entry.jl")
 include("lossless.jl")
+include("field_specs.jl")
 include("rules.jl")
+include("profiles.jl")
 
 end # module

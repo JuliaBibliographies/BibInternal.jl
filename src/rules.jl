@@ -1,4 +1,12 @@
-abstract type AbstractFieldRequirement end
+"""
+Base type for declarative and custom bibliography validation rules.
+
+Third-party packages may subtype this type and extend `validate_rule` without
+modifying BibInternal's canonical field model.
+"""
+abstract type AbstractBibliographyRule end
+
+abstract type AbstractFieldRequirement <: AbstractBibliographyRule end
 
 """
     RequiredField(name)
