@@ -676,8 +676,8 @@ end
     import BibInternal
     import Test: @test
 
-    lazyweb = BibInternal.RuleProfile(
-        name=:LazyWeb,
+    catalogue = BibInternal.RuleProfile(
+        name=:CuratedCatalogue,
         global_rules=[
             BibInternal.RequiredField("labels"),
             BibInternal.FieldTypeRule("year", :year),
@@ -686,8 +686,8 @@ end
     )
     combined = BibInternal.compose_profiles(
         BibInternal.BIBTEX_PROFILE,
-        lazyweb;
-        name=:LazyWebBibTeX,
+        catalogue;
+        name=:CuratedBibTeX,
     )
     @test isempty(combined.diagnostics)
     @test "labels" in BibInternal.profile_field_names(combined, "article")
