@@ -6,16 +6,37 @@
 
 # BibInternal.jl
 
-This package provides an internal format to translate from/to other bibliographic format.
+BibInternal is the canonical bibliography model shared by the Humans of Julia
+bibliography stack.
+
+It sits between parsers such as `BibParser.jl` and higher-level exporters such
+as `Bibliography.jl`. The package exposes the entry model, validation rules,
+lossless document containers, and the helpers used to move between raw source
+and canonical entries.
 
 **!Warning** The support for this package will move to Julia LTS once the next LTS release is available.
 
-All entries depend on an abstract super type `AbstractEntry`.
-One generic entry `GenericEntry` is available to make entries without any specific rules.
+All entries depend on the abstract supertype `AbstractEntry`.
+One generic entry type, `Entry`, is available to represent canonical records.
 
-Currently, only one set of entries following the BibTeX rules is available. *Required* and *optional* BibTeX fields are checked by the constructor.
+Versioned rule sets are available for BibTeX and BibLaTeX entry types.
+Required fields and alternatives such as `author`/`editor`, `date`/`year`, and
+`doi`/`eprint`/`url` are validated. BibLaTeX's more expressive date syntax is
+preserved losslessly; only complete or partial ISO calendar dates (`YYYY`,
+`YYYY-MM`, and `YYYY-MM-DD`) are projected onto the canonical `Date` fields.
 
-Pull Requests to add more entries (or update the BibTeX rules) are welcome.
+The BibLaTeX rule set currently supports `article`, `book`, `inbook`,
+`incollection`, `inproceedings`, `online`, `proceedings`, `report`, `thesis`,
+`unpublished`, and `misc`. Other BibLaTeX entry types produce an
+`unknown_entry_type` diagnostic until their canonical representation is
+defined.
+
+If you only need the data model, this package can be used on its own. If you
+want a full import/export layer, use `BibParser.jl` and `Bibliography.jl`
+instead.
+
+Pull requests to add more entries, more diagnostics, or better documentation
+are welcome.
 
 Discussions are welcome on this GitHub repository.
 
