@@ -123,8 +123,9 @@ const BIBTEX_RULESET = EntryRuleSet(
     rules = Dict{String, EntryRule}(
         "article" => _entry_rule("article", ["author", "journal", "title", "year"];
             optional = _BIBTEX_OPTIONAL_FIELDS),
-        "book" => _entry_rule("book", [("author", "editor"), "publisher", "title", "year"];
-            optional = _BIBTEX_OPTIONAL_FIELDS),
+        "book" =>
+            _entry_rule("book", [("author", "editor"), "publisher", "title", "year"];
+                optional = _BIBTEX_OPTIONAL_FIELDS),
         "booklet" => _entry_rule("booklet", ["title"]; optional = _BIBTEX_OPTIONAL_FIELDS),
         "eprint" => _entry_rule("eprint", ["author", "eprint", "title", "year"];
             optional = _BIBTEX_OPTIONAL_FIELDS),
