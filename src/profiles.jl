@@ -16,8 +16,9 @@ struct MutuallyExclusiveFields <: AbstractBibliographyRule
     names::Tuple{Vararg{String}}
 end
 
-MutuallyExclusiveFields(names::AbstractVector{<:AbstractString}) =
+function MutuallyExclusiveFields(names::AbstractVector{<:AbstractString})
     MutuallyExclusiveFields(Tuple(String.(names)))
+end
 
 """
     FieldTypeRule(name, value_kind)
@@ -39,12 +40,12 @@ as one; parsers that preserve multiple values should pass a collection.
 struct FieldCardinalityRule <: AbstractBibliographyRule
     name::String
     minimum::Int
-    maximum::Union{Nothing,Int}
+    maximum::Union{Nothing, Int}
 
     function FieldCardinalityRule(
-        name::AbstractString,
-        minimum::Integer=0,
-        maximum::Union{Nothing,Integer}=nothing,
+            name::AbstractString,
+            minimum::Integer = 0,
+            maximum::Union{Nothing, Integer} = nothing
     )
         minimum >= 0 || throw(ArgumentError("minimum cardinality must be non-negative"))
         maximum === nothing || maximum >= minimum ||
@@ -77,35 +78,33 @@ it is used for product or institution overlays.
 struct RuleProfile
     name::Symbol
     version::VersionNumber
-    supported_entry_types::Union{Nothing,Set{String}}
-    aliases::Dict{String,String}
+    supported_entry_types::Union{Nothing, Set{String}}
+    aliases::Dict{String, String}
     global_rules::Vector{AbstractBibliographyRule}
-    entry_rules::Dict{String,Vector{AbstractBibliographyRule}}
+    entry_rules::Dict{String, Vector{AbstractBibliographyRule}}
     global_fields::Set{String}
-    entry_fields::Dict{String,Set{String}}
+    entry_fields::Dict{String, Set{String}}
     diagnostics::Vector{Diagnostic}
 end
 
 function RuleProfile(;
-    name::Symbol,
-    version::VersionNumber=v"1.0.0",
-    supported_entry_types::Union{Nothing,AbstractSet}=nothing,
-    aliases::AbstractDict=Dict{String,String}(),
-    global_rules::AbstractVector=AbstractBibliographyRule[],
-    entry_rules::AbstractDict=Dict{String,Vector{AbstractBibliographyRule}}(),
-    global_fields::AbstractSet=Set{String}(),
-    entry_fields::AbstractDict=Dict{String,Set{String}}(),
-    diagnostics::AbstractVector{Diagnostic}=Diagnostic[],
+        name::Symbol,
+        version::VersionNumber = v"1.0.0",
+        supported_entry_types::Union{Nothing, AbstractSet} = nothing,
+        aliases::AbstractDict = Dict{String, String}(),
+        global_rules::AbstractVector = AbstractBibliographyRule[],
+        entry_rules::AbstractDict = Dict{String, Vector{AbstractBibliographyRule}}(),
+        global_fields::AbstractSet = Set{String}(),
+        entry_fields::AbstractDict = Dict{String, Set{String}}(),
+        diagnostics::AbstractVector{Diagnostic} = Diagnostic[]
 )
-    normalized_entry_rules = Dict{String,Vector{AbstractBibliographyRule}}()
+    normalized_entry_rules = Dict{String, Vector{AbstractBibliographyRule}}()
     for (entry_type, rules) in pairs(entry_rules)
-        normalized_entry_rules[lowercase(String(entry_type))] =
-            AbstractBibliographyRule[rules...]
+        normalized_entry_rules[lowercase(String(entry_type))] = AbstractBibliographyRule[rules...]
     end
-    normalized_entry_fields = Dict{String,Set{String}}()
+    normalized_entry_fields = Dict{String, Set{String}}()
     for (entry_type, names) in pairs(entry_fields)
-        normalized_entry_fields[lowercase(String(entry_type))] =
-            Set(lowercase.(String.(collect(names))))
+        normalized_entry_fields[lowercase(String(entry_type))] = Set(lowercase.(String.(collect(names))))
     end
     return RuleProfile(
         name,
@@ -114,13 +113,13 @@ function RuleProfile(;
         nothing : Set(lowercase.(String.(collect(supported_entry_types)))),
         Dict(
             lowercase(String(alias)) => lowercase(String(canonical))
-            for (alias, canonical) in pairs(aliases)
+        for (alias, canonical) in pairs(aliases)
         ),
         AbstractBibliographyRule[global_rules...],
         normalized_entry_rules,
         Set(lowercase.(String.(collect(global_fields)))),
         normalized_entry_fields,
-        collect(diagnostics),
+        collect(diagnostics)
     )
 end
 
@@ -133,8 +132,8 @@ function _requirement_fields(requirement::AlternativeRequiredField)
 end
 
 function RuleProfile(ruleset::EntryRuleSet)
-    entry_rules = Dict{String,Vector{AbstractBibliographyRule}}()
-    entry_fields = Dict{String,Set{String}}()
+    entry_rules = Dict{String, Vector{AbstractBibliographyRule}}()
+    entry_fields = Dict{String, Set{String}}()
     for (entry_type, rule) in pairs(ruleset.rules)
         name = lowercase(entry_type)
         entry_rules[name] = AbstractBibliographyRule[rule.required...]
@@ -146,12 +145,12 @@ function RuleProfile(ruleset::EntryRuleSet)
         entry_fields[name] = names
     end
     return RuleProfile(
-        name=ruleset.name,
-        version=ruleset.version,
-        supported_entry_types=Set(keys(ruleset.rules)),
-        aliases=ruleset.aliases,
-        entry_rules=entry_rules,
-        entry_fields=entry_fields,
+        name = ruleset.name,
+        version = ruleset.version,
+        supported_entry_types = Set(keys(ruleset.rules)),
+        aliases = ruleset.aliases,
+        entry_rules = entry_rules,
+        entry_fields = entry_fields
     )
 end
 
@@ -159,32 +158,32 @@ const BIBTEX_PROFILE = RuleProfile(BIBTEX_RULESET)
 const BIBLATEX_PROFILE = RuleProfile(BIBLATEX_RULESET)
 
 function _profile_diagnostic(
-    code::Symbol,
-    message::AbstractString;
-    field::AbstractString="",
+        code::Symbol,
+        message::AbstractString;
+        field::AbstractString = ""
 )
     Diagnostic(
-        code=code,
-        severity=diagnostic_error,
-        message=String(message),
-        field=String(field),
-        suggestion="Adjust or remove one of the conflicting rule profiles.",
+        code = code,
+        severity = diagnostic_error,
+        message = String(message),
+        field = String(field),
+        suggestion = "Adjust or remove one of the conflicting rule profiles."
     )
 end
 
 function _required_names(rules)
     Set(
         lowercase(rule.name)
-        for rule in rules
-        if rule isa RequiredField
+    for rule in rules
+    if rule isa RequiredField
     )
 end
 
 function _forbidden_names(rules)
     Set(
         lowercase(rule.name)
-        for rule in rules
-        if rule isa ForbiddenField
+    for rule in rules
+    if rule isa ForbiddenField
     )
 end
 
@@ -198,8 +197,8 @@ function _profile_rule_conflicts(rules, scope::AbstractString)
             _profile_diagnostic(
                 :contradictory_field_rules,
                 "Field '$name' is both required and forbidden in $scope.",
-                field=name,
-            ),
+                field = name
+            )
         )
     end
     for rule in rules
@@ -210,8 +209,8 @@ function _profile_rule_conflicts(rules, scope::AbstractString)
                 _profile_diagnostic(
                     :impossible_alternative_requirement,
                     "Every alternative in {$(join(sort!(collect(names)), "|"))} is forbidden in $scope.",
-                    field=join(sort!(collect(names)), "|"),
-                ),
+                    field = join(sort!(collect(names)), "|")
+                )
             )
         elseif rule isa MutuallyExclusiveFields
             names = Set(lowercase.(collect(rule.names)))
@@ -221,27 +220,27 @@ function _profile_rule_conflicts(rules, scope::AbstractString)
                 _profile_diagnostic(
                     :required_fields_are_mutually_exclusive,
                     "Required fields $(join(sort!(collect(conflicting)), ", ")) are mutually exclusive in $scope.",
-                    field=join(sort!(collect(conflicting)), "|"),
-                ),
+                    field = join(sort!(collect(conflicting)), "|")
+                )
             )
         end
     end
-    type_rules = Dict{String,Set{Symbol}}()
-    cardinalities = Dict{String,Vector{FieldCardinalityRule}}()
+    type_rules = Dict{String, Set{Symbol}}()
+    cardinalities = Dict{String, Vector{FieldCardinalityRule}}()
     for rule in rules
         if rule isa FieldTypeRule
             push!(
                 get!(type_rules, lowercase(rule.name), Set{Symbol}()),
-                rule.value_kind,
+                rule.value_kind
             )
         elseif rule isa FieldCardinalityRule
             push!(
                 get!(
                     cardinalities,
                     lowercase(rule.name),
-                    FieldCardinalityRule[],
+                    FieldCardinalityRule[]
                 ),
-                rule,
+                rule
             )
         end
     end
@@ -251,15 +250,14 @@ function _profile_rule_conflicts(rules, scope::AbstractString)
             _profile_diagnostic(
                 :contradictory_field_types,
                 "Field '$name' has incompatible value kinds $(join(sort!(string.(collect(kinds))), ", ")) in $scope.",
-                field=name,
-            ),
+                field = name
+            )
         )
     end
     for (name, constraints) in pairs(cardinalities)
         lower_bound = maximum(rule.minimum for rule in constraints)
-        finite_maxima = Int[
-            rule.maximum for rule in constraints if !isnothing(rule.maximum)
-        ]
+        finite_maxima = Int[rule.maximum
+                            for rule in constraints if !isnothing(rule.maximum)]
         maximum_value = isempty(finite_maxima) ? nothing : minimum(finite_maxima)
         if !isnothing(maximum_value) && lower_bound > maximum_value
             push!(
@@ -267,8 +265,8 @@ function _profile_rule_conflicts(rules, scope::AbstractString)
                 _profile_diagnostic(
                     :contradictory_field_cardinality,
                     "Field '$name' has incompatible cardinality limits in $scope.",
-                    field=name,
-                ),
+                    field = name
+                )
             )
         end
     end
@@ -286,8 +284,8 @@ function profile_rules(profile::RuleProfile, entry_type::AbstractString)
         get(
             profile.entry_rules,
             lowercase(String(entry_type)),
-            AbstractBibliographyRule[],
-        ),
+            AbstractBibliographyRule[]
+        )
     )
 end
 
@@ -301,7 +299,7 @@ function profile_field_names(profile::RuleProfile, entry_type::AbstractString)
     names = copy(profile.global_fields)
     union!(
         names,
-        get(profile.entry_fields, lowercase(String(entry_type)), Set{String}()),
+        get(profile.entry_fields, lowercase(String(entry_type)), Set{String}())
     )
     for rule in profile_rules(profile, entry_type)
         if rule isa RequiredField || rule isa ForbiddenField ||
@@ -326,16 +324,14 @@ Conflicts are retained as error diagnostics on the resulting profile rather
 than being resolved through precedence.
 """
 function compose_profiles(
-    profiles::RuleProfile...;
-    name::Symbol=_derived_profile_name(profiles),
+        profiles::RuleProfile...;
+        name::Symbol = _derived_profile_name(profiles)
 )
     isempty(profiles) && throw(ArgumentError("At least one rule profile is required"))
     diagnostics = Diagnostic[]
-    restricted = [
-        profile.supported_entry_types
-        for profile in profiles
-        if !isnothing(profile.supported_entry_types)
-    ]
+    restricted = [profile.supported_entry_types
+                  for profile in profiles
+                  if !isnothing(profile.supported_entry_types)]
     supported = if isempty(restricted)
         nothing
     else
@@ -346,16 +342,16 @@ function compose_profiles(
             diagnostics,
             _profile_diagnostic(
                 :incompatible_entry_type_profiles,
-                "The selected profiles have no entry type in common.",
-            ),
+                "The selected profiles have no entry type in common."
+            )
         )
     end
 
-    aliases = Dict{String,String}()
+    aliases = Dict{String, String}()
     global_rules = AbstractBibliographyRule[]
-    entry_rules = Dict{String,Vector{AbstractBibliographyRule}}()
+    entry_rules = Dict{String, Vector{AbstractBibliographyRule}}()
     global_fields = Set{String}()
-    entry_fields = Dict{String,Set{String}}()
+    entry_fields = Dict{String, Set{String}}()
     for profile in profiles
         append!(diagnostics, profile.diagnostics)
         append!(global_rules, profile.global_rules)
@@ -368,8 +364,8 @@ function compose_profiles(
                     _profile_diagnostic(
                         :contradictory_field_alias,
                         "Alias '$alias' maps to both '$previous' and '$canonical'.",
-                        field=alias,
-                    ),
+                        field = alias
+                    )
                 )
             else
                 aliases[alias] = canonical
@@ -380,9 +376,9 @@ function compose_profiles(
                 get!(
                     entry_rules,
                     entry_type,
-                    AbstractBibliographyRule[],
+                    AbstractBibliographyRule[]
                 ),
-                rules,
+                rules
             )
         end
         for (entry_type, names) in pairs(profile.entry_fields)
@@ -403,36 +399,36 @@ function compose_profiles(
                     get(
                         entry_rules,
                         entry_type,
-                        AbstractBibliographyRule[],
-                    ),
+                        AbstractBibliographyRule[]
+                    )
                 ),
-                "entry type '$entry_type'",
-            ),
+                "entry type '$entry_type'"
+            )
         )
     end
     unique_diagnostics = unique(
         diagnostic -> (
             diagnostic.code,
             diagnostic.message,
-            diagnostic.field,
+            diagnostic.field
         ),
-        diagnostics,
+        diagnostics
     )
     return RuleProfile(
-        name=name,
-        version=maximum(getproperty.(profiles, :version)),
-        supported_entry_types=supported,
-        aliases=aliases,
-        global_rules=global_rules,
-        entry_rules=entry_rules,
-        global_fields=global_fields,
-        entry_fields=entry_fields,
-        diagnostics=unique_diagnostics,
+        name = name,
+        version = maximum(getproperty.(profiles, :version)),
+        supported_entry_types = supported,
+        aliases = aliases,
+        global_rules = global_rules,
+        entry_rules = entry_rules,
+        global_fields = global_fields,
+        entry_fields = entry_fields,
+        diagnostics = unique_diagnostics
     )
 end
 
 function _profile_fields(fields::AbstractDict, profile::RuleProfile)
-    normalized = Dict{String,Any}()
+    normalized = Dict{String, Any}()
     for (name, value) in pairs(fields)
         lowered = lowercase(String(name))
         canonical = get(profile.aliases, lowered, lowered)
@@ -469,98 +465,98 @@ function _matches_value_kind(value, kind::Symbol)
 end
 
 function _rule_diagnostic(
-    context::RuleContext,
-    code::Symbol,
-    message::AbstractString,
-    field::AbstractString;
-    suggestion::AbstractString="",
+        context::RuleContext,
+        code::Symbol,
+        message::AbstractString,
+        field::AbstractString;
+        suggestion::AbstractString = ""
 )
     Diagnostic(
-        code=code,
-        severity=diagnostic_error,
-        message=String(message),
-        entry_id=context.entry_id,
-        field=String(field),
-        suggestion=String(suggestion),
+        code = code,
+        severity = diagnostic_error,
+        message = String(message),
+        entry_id = context.entry_id,
+        field = String(field),
+        suggestion = String(suggestion)
     )
 end
 
 function validate_rule(
-    rule::RequiredField,
-    fields::AbstractDict,
-    context::RuleContext,
+        rule::RequiredField,
+        fields::AbstractDict,
+        context::RuleContext
 )
     _has_profile_value(fields, rule.name) && return Diagnostic[]
     return Diagnostic[
         _rule_diagnostic(
-            context,
-            :missing_required_field,
-            "Entry $(repr(context.entry_id)) is missing required field $(rule.name).",
-            rule.name;
-            suggestion="Add the missing field or change the active rule profiles.",
-        ),
+        context,
+        :missing_required_field,
+        "Entry $(repr(context.entry_id)) is missing required field $(rule.name).",
+        rule.name;
+        suggestion = "Add the missing field or change the active rule profiles."
+    ),
     ]
 end
 
 function validate_rule(
-    rule::AlternativeRequiredField,
-    fields::AbstractDict,
-    context::RuleContext,
+        rule::AlternativeRequiredField,
+        fields::AbstractDict,
+        context::RuleContext
 )
     any(name -> _has_profile_value(fields, name), rule.names) &&
         return Diagnostic[]
     label = "{" * join(rule.names, "|") * "}"
     return Diagnostic[
         _rule_diagnostic(
-            context,
-            :missing_required_field,
-            "Entry $(repr(context.entry_id)) is missing required field $label.",
-            label;
-            suggestion="Fill at least one alternative or change the active rule profiles.",
-        ),
+        context,
+        :missing_required_field,
+        "Entry $(repr(context.entry_id)) is missing required field $label.",
+        label;
+        suggestion = "Fill at least one alternative or change the active rule profiles."
+    ),
     ]
 end
 
 function validate_rule(
-    rule::ForbiddenField,
-    fields::AbstractDict,
-    context::RuleContext,
+        rule::ForbiddenField,
+        fields::AbstractDict,
+        context::RuleContext
 )
     !_has_profile_value(fields, rule.name) && return Diagnostic[]
     return Diagnostic[
         _rule_diagnostic(
-            context,
-            :forbidden_field,
-            "Entry $(repr(context.entry_id)) contains forbidden field $(rule.name).",
-            rule.name;
-            suggestion="Remove the field or change the active rule profiles.",
-        ),
+        context,
+        :forbidden_field,
+        "Entry $(repr(context.entry_id)) contains forbidden field $(rule.name).",
+        rule.name;
+        suggestion = "Remove the field or change the active rule profiles."
+    ),
     ]
 end
 
 function validate_rule(
-    rule::MutuallyExclusiveFields,
-    fields::AbstractDict,
-    context::RuleContext,
+        rule::MutuallyExclusiveFields,
+        fields::AbstractDict,
+        context::RuleContext
 )
     present = [name for name in rule.names if _has_profile_value(fields, name)]
     length(present) <= 1 && return Diagnostic[]
     label = join(present, "|")
     return Diagnostic[
         _rule_diagnostic(
-            context,
-            :mutually_exclusive_fields,
-            "Entry $(repr(context.entry_id)) contains mutually exclusive fields $(join(present, ", ")).",
-            label;
-            suggestion="Keep only one of the mutually exclusive fields.",
-        ),
+        context,
+        :mutually_exclusive_fields,
+        "Entry $(repr(context.entry_id)) contains mutually exclusive fields $(join(present, ", ")).",
+        label;
+        suggestion = "Keep only one of the mutually exclusive fields."
+    ),
     ]
 end
 
 function validate_rule(
-    rule::FieldTypeRule,
-    fields::AbstractDict,
-    context::RuleContext,
+        rule::FieldTypeRule,
+        fields::AbstractDict,
+        context::RuleContext
 )
     !_has_profile_value(fields, rule.name) && return Diagnostic[]
     value = get(fields, lowercase(rule.name), nothing)
@@ -569,19 +565,19 @@ function validate_rule(
         return Diagnostic[]
     return Diagnostic[
         _rule_diagnostic(
-            context,
-            :invalid_field_value,
-            "Field $(rule.name) does not match value kind $(rule.value_kind).",
-            rule.name;
-            suggestion="Use a value compatible with the active rule profile.",
-        ),
+        context,
+        :invalid_field_value,
+        "Field $(rule.name) does not match value kind $(rule.value_kind).",
+        rule.name;
+        suggestion = "Use a value compatible with the active rule profile."
+    ),
     ]
 end
 
 function validate_rule(
-    rule::FieldCardinalityRule,
-    fields::AbstractDict,
-    context::RuleContext,
+        rule::FieldCardinalityRule,
+        fields::AbstractDict,
+        context::RuleContext
 )
     count = _profile_value_count(get(fields, lowercase(rule.name), nothing))
     valid = count >= rule.minimum &&
@@ -592,28 +588,28 @@ function validate_rule(
             "$(rule.minimum) to $(rule.maximum)"
     return Diagnostic[
         _rule_diagnostic(
-            context,
-            :invalid_field_cardinality,
-            "Field $(rule.name) must contain $range values; found $count.",
-            rule.name;
-            suggestion="Adjust the number of values.",
-        ),
+        context,
+        :invalid_field_cardinality,
+        "Field $(rule.name) must contain $range values; found $count.",
+        rule.name;
+        suggestion = "Adjust the number of values."
+    ),
     ]
 end
 
 function validate_rule(
-    rule::AbstractBibliographyRule,
-    ::AbstractDict,
-    context::RuleContext,
+        rule::AbstractBibliographyRule,
+        ::AbstractDict,
+        context::RuleContext
 )
     return Diagnostic[
         _rule_diagnostic(
-            context,
-            :unimplemented_custom_rule,
-            "No validator is registered for custom rule $(typeof(rule)).",
-            "";
-            suggestion="Extend BibInternal.validate_rule for this rule type.",
-        ),
+        context,
+        :unimplemented_custom_rule,
+        "No validator is registered for custom rule $(typeof(rule)).",
+        "";
+        suggestion = "Extend BibInternal.validate_rule for this rule type."
+    ),
     ]
 end
 
@@ -623,9 +619,9 @@ end
 Validate one entry against a composed rule profile.
 """
 function validate_fields(
-    fields::AbstractDict,
-    profile::RuleProfile;
-    id::AbstractString="",
+        fields::AbstractDict,
+        profile::RuleProfile;
+        id::AbstractString = ""
 )
     entry_type = lowercase(
         String(get(fields, "_type", get(fields, "type", "misc"))),
@@ -636,21 +632,21 @@ function validate_fields(
         push!(
             diagnostics,
             Diagnostic(
-                code=:unknown_entry_type,
-                severity=diagnostic_error,
-                message="Unknown $(profile.name) entry type '$entry_type'.",
-                entry_id=String(id),
-                suggestion="Use a supported entry type or change the active rule profiles.",
-            ),
+                code = :unknown_entry_type,
+                severity = diagnostic_error,
+                message = "Unknown $(profile.name) entry type '$entry_type'.",
+                entry_id = String(id),
+                suggestion = "Use a supported entry type or change the active rule profiles."
+            )
         )
         return ValidationResult(diagnostics)
     end
     normalized = _profile_fields(fields, profile)
     context = RuleContext(
-        profile_name=profile.name,
-        profile_version=profile.version,
-        entry_id=String(id),
-        entry_type=entry_type,
+        profile_name = profile.name,
+        profile_version = profile.version,
+        entry_id = String(id),
+        entry_type = entry_type
     )
     for rule in profile_rules(profile, entry_type)
         append!(diagnostics, validate_rule(rule, normalized, context))
@@ -658,11 +654,11 @@ function validate_fields(
     return ValidationResult(diagnostics)
 end
 
-validate(entry::Entry, profile::RuleProfile) =
-    validate_fields(entry_fields(entry), profile; id=entry.id)
+function validate(entry::Entry, profile::RuleProfile)
+    validate_fields(entry_fields(entry), profile; id = entry.id)
+end
 
-validate(entry::LosslessEntry, profile::RuleProfile) =
-    validate(entry.canonical, profile)
+validate(entry::LosslessEntry, profile::RuleProfile) = validate(entry.canonical, profile)
 
 function validate(document::BibliographyDocument, profile::RuleProfile)
     diagnostics = copy(document.diagnostics)
@@ -677,17 +673,17 @@ end
     import Test: @test
 
     catalogue = BibInternal.RuleProfile(
-        name=:CuratedCatalogue,
-        global_rules=[
+        name = :CuratedCatalogue,
+        global_rules = [
             BibInternal.RequiredField("labels"),
-            BibInternal.FieldTypeRule("year", :year),
+            BibInternal.FieldTypeRule("year", :year)
         ],
-        global_fields=Set(["labels"]),
+        global_fields = Set(["labels"])
     )
     combined = BibInternal.compose_profiles(
         BibInternal.BIBTEX_PROFILE,
         catalogue;
-        name=:CuratedBibTeX,
+        name = :CuratedBibTeX
     )
     @test isempty(combined.diagnostics)
     @test "labels" in BibInternal.profile_field_names(combined, "article")
@@ -699,23 +695,22 @@ end
         "journal" => "Notes",
         "title" => "Computing",
         "year" => "1843",
-        "labels" => "history, computing",
+        "labels" => "history, computing"
     )
-    @test BibInternal.validate_fields(valid, combined; id="lovelace1843").ok
+    @test BibInternal.validate_fields(valid, combined; id = "lovelace1843").ok
 
     missing_labels = copy(valid)
     delete!(missing_labels, "labels")
     result = BibInternal.validate_fields(
         missing_labels,
         combined;
-        id="lovelace1843",
+        id = "lovelace1843"
     )
     @test !result.ok
     @test any(
-        diagnostic ->
-            diagnostic.code == :missing_required_field &&
-            diagnostic.field == "labels",
-        result.diagnostics,
+        diagnostic -> diagnostic.code == :missing_required_field &&
+                      diagnostic.field == "labels",
+        result.diagnostics
     )
 
     invalid_year = copy(valid)
@@ -723,7 +718,7 @@ end
     result = BibInternal.validate_fields(invalid_year, combined)
     @test any(
         diagnostic -> diagnostic.code == :invalid_field_value,
-        result.diagnostics,
+        result.diagnostics
     )
 end
 
@@ -732,23 +727,23 @@ end
     import Test: @test
 
     required = BibInternal.RuleProfile(
-        name=:Required,
-        global_rules=[
+        name = :Required,
+        global_rules = [
             BibInternal.RequiredField("labels"),
             BibInternal.RequiredField("doi"),
             BibInternal.RequiredField("url"),
             BibInternal.FieldTypeRule("year", :year),
-            BibInternal.FieldCardinalityRule("author", 2, nothing),
-        ],
+            BibInternal.FieldCardinalityRule("author", 2, nothing)
+        ]
     )
     forbidden = BibInternal.RuleProfile(
-        name=:Forbidden,
-        global_rules=[
+        name = :Forbidden,
+        global_rules = [
             BibInternal.ForbiddenField("labels"),
             BibInternal.MutuallyExclusiveFields(["doi", "url"]),
             BibInternal.FieldTypeRule("year", :date),
-            BibInternal.FieldCardinalityRule("author", 0, 1),
-        ],
+            BibInternal.FieldCardinalityRule("author", 0, 1)
+        ]
     )
     composed = BibInternal.compose_profiles(required, forbidden)
     codes = Set(getproperty.(composed.diagnostics, :code))
@@ -758,7 +753,7 @@ end
     @test :contradictory_field_cardinality in codes
     @test !BibInternal.validate_fields(
         Dict("_type" => "article"),
-        composed,
+        composed
     ).ok
 end
 
@@ -772,33 +767,33 @@ end
     end
 
     function BibInternal.validate_rule(
-        rule::StartsWithRule,
-        fields::AbstractDict,
-        context::BibInternal.RuleContext,
+            rule::StartsWithRule,
+            fields::AbstractDict,
+            context::BibInternal.RuleContext
     )
         value = string(get(fields, rule.field, ""))
         startswith(value, rule.prefix) && return BibInternal.Diagnostic[]
         return BibInternal.Diagnostic[
             BibInternal.Diagnostic(
-                code=:custom_prefix,
-                severity=BibInternal.diagnostic_error,
-                message="Custom prefix rule failed.",
-                entry_id=context.entry_id,
-                field=rule.field,
-            ),
+            code = :custom_prefix,
+            severity = BibInternal.diagnostic_error,
+            message = "Custom prefix rule failed.",
+            entry_id = context.entry_id,
+            field = rule.field
+        ),
         ]
     end
 
     profile = BibInternal.RuleProfile(
-        name=:Custom,
-        global_rules=[StartsWithRule("doi", "10.")],
+        name = :Custom,
+        global_rules = [StartsWithRule("doi", "10.")]
     )
     @test BibInternal.validate_fields(
         Dict("_type" => "misc", "doi" => "10.1234/example"),
-        profile,
+        profile
     ).ok
     @test !BibInternal.validate_fields(
         Dict("_type" => "misc", "doi" => "example"),
-        profile,
+        profile
     ).ok
 end

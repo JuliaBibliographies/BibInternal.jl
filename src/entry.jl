@@ -427,16 +427,16 @@ end
               BibInternal.Date("1", "5", "1805")
 
         @test_throws ArgumentError BibInternal.Date(
-            "", "", "1")<
-        BibInternal.Date("", "", "2000a")
+            "", "", "1") <
+                                   BibInternal.Date("", "", "2000a")
         @test_throws ArgumentError BibInternal.Date(
             "", "", "1")<BibInternal.Date("", "", "")
         @test_throws ArgumentError BibInternal.Date(
-            "", "", "1")<
-        BibInternal.Date("", "", "90ies")
+            "", "", "1") <
+                                   BibInternal.Date("", "", "90ies")
         @test_throws ArgumentError BibInternal.Date(
-            "", "", "40k")<
-        BibInternal.Date("", "", "40000")
+            "", "", "40k") <
+                                   BibInternal.Date("", "", "40000")
     end
 
     @testset "isless() for BibInternal.Name" begin
