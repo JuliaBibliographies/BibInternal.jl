@@ -19,6 +19,12 @@ end
 
 const Names = Vector{Name}
 
+function _join_name_parts(parts, separator::AbstractString)
+    joined = join(parts, separator)
+    isnothing(joined) && return ""
+    return String(joined)
+end
+
 """
     Name(str::String)
 Decompose without ambiguities a name as `particle` (optional) `last`, `junior` (optional), `first` `middle` (optional) based on BibTeX possible input. As for BibTeX, the decomposition of a name in the form of `first` `last` is also possible, but ambiguities can occur.
@@ -27,11 +33,11 @@ function Name(str)
     @assert !isempty(strip(str)) "Name must not be empty or consist of only whitespace"
 
     # subnames containers
-    first = ""
-    middle = ""
-    particle = ""
-    last = ""
-    junior = ""
+    first::String = ""
+    middle::String = ""
+    particle::String = ""
+    last::String = ""
+    junior::String = ""
 
     if (str[1], str[end]) == ('{', '}')
         last = str
@@ -64,7 +70,7 @@ function Name(str)
                     mark_out -= 1
                     last = "$s " * last
                 end
-                particle = join(aux[mark_in:mark_out], " ")
+                particle = _join_name_parts(aux[mark_in:mark_out], " ")
             end
 
             # BibTeX form 2: von Last, First Second
@@ -77,10 +83,10 @@ function Name(str)
                 mark_out -= 1
                 last = "$s " * last
             end
-            particle = join(aux[1:mark_out], " ")
+            particle = _join_name_parts(aux[1:mark_out], " ")
             aux = subnames[end]  # First Second
             first = aux[1]
-            middle = join(aux[2:end], " ")
+            middle = _join_name_parts(aux[2:end], " ")
 
             # BibTeX form 3: von Last, Junior, First Second
         elseif length(subnames) == 3
@@ -92,13 +98,13 @@ function Name(str)
                 mark_out -= 1
                 last = "$s " * last
             end
-            particle = join(aux[1:mark_out], " ")
+            particle = _join_name_parts(aux[1:mark_out], " ")
             aux = subnames[2]
             @assert length(aux)==1 "malformed junior subname"
             junior = aux[1]
             aux = subnames[end]  # First Second
             first = aux[1]
-            middle = join(aux[2:end], " ")
+            middle = _join_name_parts(aux[2:end], " ")
 
         else
             # TODO: become more strict here in the future? but beware, right
@@ -114,7 +120,11 @@ end
     names(str::String)
 Decompose into parts a list of names in BibTeX compatible format. That is names separated by `and`.
 """
-names(str) = map(Name, split(strip(str), r"\s+and\s+"; keepempty = false))
+function names(str)
+    stripped = strip(str)
+    isempty(stripped) && return Name[]
+    return map(Name, split(stripped, r"\s+and\s+"; keepempty = false))
+end
 
 """
     struct Access

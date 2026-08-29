@@ -18,13 +18,14 @@ function bibinternal_perf_suite(;
                 comparison_key = "entry-construction/v1"),
             FeatureVariant(joinpath(@__DIR__, "features", "construct_entry.jl");
                 since = v"0.2.8", comparison_key = "entry-construction/v1")],
-        options = Dict(:samples => 20, :evals => 1, :seconds => 0.2))
+        options = Dict(:samples => 50, :evals => 1, :seconds => 0.5))
     validation = FeatureSpec(:validate_entry;
         description = "Validate an entry against the canonical rules",
         entrypoint = joinpath(@__DIR__, "features", "validate_entry.jl"),
         since = v"0.4.0", comparison_key = "entry-validation/v1",
-        options = Dict(:samples => 20, :evals => 1, :seconds => 0.2))
-    allocation_options = Dict(:targets => ["BibInternal"], :track => "none", :repeat => true)
+        options = Dict(:samples => 50, :evals => 1, :seconds => 0.5))
+    allocation_options = Dict(
+        :targets => ["BibInternal"], :track => "none", :repeat => true)
     construction_allocations = FeatureSpec(:construct_entry_allocations;
         description = "Attribute entry-construction allocations to source file and line",
         backend = :profile_alloc, variants = construction.variants,
@@ -41,7 +42,14 @@ function bibinternal_perf_suite(;
     validation_profile = FeatureSpec(:validate_entry_profile;
         description = "Capture validation CPU call stacks for flame graphs",
         backend = :profile, variants = validation.variants, options = profile_options)
+    construction_wall_profile = FeatureSpec(:construct_entry_wall_profile;
+        description = "Capture entry-construction task wall-time stacks",
+        backend = :wall_profile, variants = construction.variants, options = profile_options)
+    validation_wall_profile = FeatureSpec(:validate_entry_wall_profile;
+        description = "Capture validation task wall-time stacks",
+        backend = :wall_profile, variants = validation.variants, options = profile_options)
     return PackageSuite("BibInternal"; source, environment, versions = :all,
         features = [construction, validation, construction_allocations,
-            validation_allocations, construction_profile, validation_profile])
+            validation_allocations, construction_profile, validation_profile,
+            construction_wall_profile, validation_wall_profile])
 end

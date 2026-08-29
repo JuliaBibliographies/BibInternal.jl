@@ -227,6 +227,7 @@ end
 
 function _normalized_fields(fields::AbstractDict, ruleset::EntryRuleSet, rule::EntryRule)
     normalized = Dict{String, String}()
+    sizehint!(normalized, length(fields))
     for (name, value) in fields
         normalized[_canonical_field_name(name, ruleset, rule)] = String(value)
     end
@@ -260,25 +261,34 @@ entry converted back to fields.
 function validate_fields(
         fields::AbstractDict, ruleset::EntryRuleSet; id::AbstractString = "")
     entry_type = _entry_type(fields)
-    diagnostics = Diagnostic[]
     if !haskey(ruleset.rules, entry_type)
-        push!(
-            diagnostics,
-            Diagnostic(
-                code = :unknown_entry_type,
-                severity = diagnostic_error,
-                message = "Unknown $(ruleset.name) entry type '$entry_type'.",
-                entry_id = String(id),
-                suggestion = "Use a known entry type or validate with a more permissive ruleset."
-            )
-        )
-        return ValidationResult(diagnostics)
+        return _unknown_entry_type(ruleset, entry_type, id)
     end
 
     rule = ruleset.rules[entry_type]
     normalized = _normalized_fields(fields, ruleset, rule)
+    return _validate_normalized_fields(normalized, rule, id)
+end
+
+function _unknown_entry_type(ruleset::EntryRuleSet, entry_type, id)
+    diagnostics = Diagnostic[]
+    push!(
+        diagnostics,
+        Diagnostic(
+            code = :unknown_entry_type,
+            severity = diagnostic_error,
+            message = "Unknown $(ruleset.name) entry type '$entry_type'.",
+            entry_id = String(id),
+            suggestion = "Use a known entry type or validate with a more permissive ruleset."
+        )
+    )
+    return ValidationResult(diagnostics)
+end
+
+function _validate_normalized_fields(fields, rule::EntryRule, id)
+    diagnostics = Diagnostic[]
     for requirement in rule.required
-        if _missing_requirement(requirement, normalized)
+        if _missing_requirement(requirement, fields)
             push!(
                 diagnostics,
                 Diagnostic(
@@ -295,6 +305,17 @@ function validate_fields(
     return ValidationResult(diagnostics)
 end
 
+function _entry_name(name)
+    join(
+        (part
+        for part in (name.particle, name.last, name.junior, name.first, name.middle)
+        if !isempty(part)),
+        " "
+    )
+end
+
+_entry_names(names) = join((_entry_name(name) for name in names), " and ")
+
 """
     entry_fields(entry::Entry)
 
@@ -303,25 +324,14 @@ bridge used by validation and format conversion code.
 """
 function entry_fields(entry::Entry)
     data = Dict{String, String}(entry.fields)
+    sizehint!(data, length(entry.fields) + 32)
     data["_type"] = entry.type
-    data["author"] = join(
-        map(
-            n -> join(
-                filter(!isempty, [n.particle, n.last, n.junior, n.first, n.middle]), " "),
-            entry.authors),
-        " and "
-    )
+    data["author"] = _entry_names(entry.authors)
     data["booktitle"] = entry.booktitle
     data["day"] = entry.date.day
     data["month"] = entry.date.month
     data["year"] = entry.date.year
-    data["editor"] = join(
-        map(
-            n -> join(
-                filter(!isempty, [n.particle, n.last, n.junior, n.first, n.middle]), " "),
-            entry.editors),
-        " and "
-    )
+    data["editor"] = _entry_names(entry.editors)
     data["doi"] = entry.access.doi
     data["howpublished"] = entry.access.howpublished
     data["url"] = entry.access.url
@@ -353,7 +363,11 @@ end
 Validate a canonical entry against a ruleset.
 """
 function validate(entry::Entry, ruleset::EntryRuleSet = BIBTEX_RULESET)
-    validate_fields(entry_fields(entry), ruleset; id = entry.id)
+    entry_type = lowercase(entry.type)
+    haskey(ruleset.rules, entry_type) ||
+        return _unknown_entry_type(ruleset, entry_type, entry.id)
+    rule = ruleset.rules[entry_type]
+    return _validate_normalized_fields(entry_fields(entry), rule, entry.id)
 end
 
 """

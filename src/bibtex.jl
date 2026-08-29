@@ -44,14 +44,16 @@ function check_entry(fields, check, id)
     errors = Vector{String}()
 
     entry_type = get(fields, "_type", "misc")
-    if entry_type ∉ keys(rules)
+    if !haskey(rules, entry_type)
         if check ∈ [:error, :warn]
             @warn """KeyError: key "software" not found in BibTeX rules, parsed from the entry `$id` with""" fields
         end
         check == :error && throw(KeyError(entry_type))
     end
 
-    for t_field in get(rules, entry_type, Vector{Required}())
+    requirements = get(rules, entry_type, nothing)
+    isnothing(requirements) && return errors
+    for t_field in requirements
         at_least_one = false
         if typeof(t_field) == Tuple{String, String}
             for field in t_field
@@ -80,15 +82,19 @@ Make an entry if the entry follows the BibTeX guidelines. Throw an error otherwi
 """
 function make_bibtex_entry(id, fields; check = :error)
     # @info id fields
-    fields = Dict(lowercase(k) => v for (k, v) in fields) # lowercase tag names
-    errors = check_entry(fields, check, id)
-    if length(errors) > 0 && check ∈ [:error, :warn]
-        message = "Entry $id is missing the " *
-                  foldl(((x, y) -> x * ", " * y), errors) *
-                  " field(s)."
-        check == :error ? (error(message)) : (@warn message)
+    normalized = Dict{String, String}()
+    sizehint!(normalized, length(fields))
+    for (key, value) in fields
+        normalized[lowercase(String(key))] = String(value)
     end
-    return Entry(id, fields)
+    if check ∈ (:error, :warn)
+        errors = check_entry(normalized, check, id)
+        if !isempty(errors)
+            message = "Entry $id is missing the " * join(errors, ", ") * " field(s)."
+            check == :error ? (error(message)) : (@warn message)
+        end
+    end
+    return Entry(id, normalized)
 end
 
 function _normalize_biblatex_date!(fields)
@@ -104,14 +110,15 @@ function _normalize_biblatex_date!(fields)
     return fields
 end
 
+const _BIBLATEX_FIELD_ALIASES = Dict(
+    "journaltitle" => "journal",
+    "eprinttype" => "archiveprefix",
+    "eprintclass" => "primaryclass",
+    "location" => "address"
+)
+
 function _normalize_biblatex_aliases!(fields)
-    aliases = Dict(
-        "journaltitle" => "journal",
-        "eprinttype" => "archiveprefix",
-        "eprintclass" => "primaryclass",
-        "location" => "address"
-    )
-    for (alias, canonical) in aliases
+    for (alias, canonical) in _BIBLATEX_FIELD_ALIASES
         if haskey(fields, alias) && !haskey(fields, canonical)
             fields[canonical] = fields[alias]
         end
