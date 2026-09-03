@@ -24,32 +24,53 @@ function bibinternal_perf_suite(;
         entrypoint = joinpath(@__DIR__, "features", "validate_entry.jl"),
         since = v"0.4.0", comparison_key = "entry-validation/v1",
         options = Dict(:samples => 50, :evals => 1, :seconds => 0.5))
+    construction_chairmark = FeatureSpec(:construct_entry_chairmark;
+        workload = :construct_entry,
+        description = construction.description, backend = :chairmark,
+        variants = construction.variants,
+        options = Dict(:samples => 50, :evals => 1, :seconds => 0.5))
+    validation_chairmark = FeatureSpec(:validate_entry_chairmark;
+        workload = :validate_entry,
+        description = validation.description, backend = :chairmark,
+        variants = validation.variants,
+        options = Dict(:samples => 50, :evals => 1, :seconds => 0.5))
     allocation_options = Dict(
         :targets => ["BibInternal"], :track => "none", :repeat => true)
     construction_allocations = FeatureSpec(:construct_entry_allocations;
+        workload = :construct_entry,
         description = "Attribute entry-construction allocations to source file and line",
         backend = :profile_alloc, variants = construction.variants,
         options = allocation_options)
     validation_allocations = FeatureSpec(:validate_entry_allocations;
+        workload = :validate_entry,
         description = "Attribute validation allocations to source file and line",
         backend = :profile_alloc, variants = validation.variants,
         options = allocation_options)
     profile_options = Dict(:targets => ["BibInternal"], :track => "none",
         :repeat => true, :profile_seconds => 0.5, :profile_delay => 0.001)
     construction_profile = FeatureSpec(:construct_entry_profile;
+        workload = :construct_entry,
         description = "Capture entry-construction CPU call stacks for flame graphs",
         backend = :profile, variants = construction.variants, options = profile_options)
     validation_profile = FeatureSpec(:validate_entry_profile;
+        workload = :validate_entry,
         description = "Capture validation CPU call stacks for flame graphs",
         backend = :profile, variants = validation.variants, options = profile_options)
     construction_wall_profile = FeatureSpec(:construct_entry_wall_profile;
+        workload = :construct_entry,
         description = "Capture entry-construction task wall-time stacks",
-        backend = :wall_profile, variants = construction.variants, options = profile_options)
+        backend = :wall_profile, variants = construction.variants,
+        julia_since = v"1.12", options = profile_options)
     validation_wall_profile = FeatureSpec(:validate_entry_wall_profile;
+        workload = :validate_entry,
         description = "Capture validation task wall-time stacks",
-        backend = :wall_profile, variants = validation.variants, options = profile_options)
+        backend = :wall_profile, variants = validation.variants,
+        julia_since = v"1.12", options = profile_options)
     return PackageSuite("BibInternal"; source, environment, versions = :all,
-        features = [construction, validation, construction_allocations,
-            validation_allocations, construction_profile, validation_profile,
-            construction_wall_profile, validation_wall_profile])
+        features = [construction, validation, construction_chairmark,
+            validation_chairmark, construction_allocations, validation_allocations,
+            construction_profile, validation_profile, construction_wall_profile,
+            validation_wall_profile])
 end
+
+build_suite() = bibinternal_perf_suite()
