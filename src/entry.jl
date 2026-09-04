@@ -45,7 +45,7 @@ function Name(str)
 
         # split along commas, then along spaces
         subnames = map(split(str, ","; keepempty = false)) do aux
-            return split(aux, r"[\n\r ]+"; keepempty = false)
+            return split(aux; keepempty = false)
         end
 
         # mark for string parsing
@@ -123,6 +123,7 @@ Decompose into parts a list of names in BibTeX compatible format. That is names 
 function names(str)
     stripped = strip(str)
     isempty(stripped) && return Name[]
+    occursin("and", stripped) || return Name[Name(stripped)]
     return map(Name, split(stripped, r"\s+and\s+"; keepempty = false))
 end
 

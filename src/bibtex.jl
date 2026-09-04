@@ -85,7 +85,9 @@ function make_bibtex_entry(id, fields; check = :error)
     normalized = Dict{String, String}()
     sizehint!(normalized, length(fields))
     for (key, value) in fields
-        normalized[lowercase(String(key))] = String(value)
+        string_key = String(key)
+        normalized[any(isuppercase, string_key) ? lowercase(string_key) : string_key] =
+            String(value)
     end
     if check ∈ (:error, :warn)
         errors = check_entry(normalized, check, id)

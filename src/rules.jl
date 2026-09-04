@@ -246,6 +246,48 @@ function _missing_requirement(requirement::AlternativeRequiredField, fields)
     return !any(name -> !isempty(get(fields, name, "")), requirement.names)
 end
 
+@inline function _has_entry_value(entry::Entry, name::String)
+    name == "_type" && return !isempty(entry.type)
+    name == "type" && return !isempty(entry.type)
+    name == "author" && return !isempty(entry.authors)
+    name == "booktitle" && return !isempty(entry.booktitle)
+    name == "day" && return !isempty(entry.date.day)
+    name == "month" && return !isempty(entry.date.month)
+    name == "year" && return !isempty(entry.date.year)
+    name == "editor" && return !isempty(entry.editors)
+    name == "doi" && return !isempty(entry.access.doi)
+    name == "howpublished" && return !isempty(entry.access.howpublished)
+    name == "url" && return !isempty(entry.access.url)
+    name == "archiveprefix" && return !isempty(entry.eprint.archive_prefix)
+    name == "eprint" && return !isempty(entry.eprint.eprint)
+    name == "primaryclass" && return !isempty(entry.eprint.primary_class)
+    name == "note" && return !isempty(entry.note)
+    name == "title" && return !isempty(entry.title)
+    name == "address" && return !isempty(entry.in.address)
+    name == "chapter" && return !isempty(entry.in.chapter)
+    name == "edition" && return !isempty(entry.in.edition)
+    name == "institution" && return !isempty(entry.in.institution)
+    name == "isbn" && return !isempty(entry.in.isbn)
+    name == "issn" && return !isempty(entry.in.issn)
+    name == "journal" && return !isempty(entry.in.journal)
+    name == "number" && return !isempty(entry.in.number)
+    name == "organization" && return !isempty(entry.in.organization)
+    name == "pages" && return !isempty(entry.in.pages)
+    name == "publisher" && return !isempty(entry.in.publisher)
+    name == "school" && return !isempty(entry.in.school)
+    name == "series" && return !isempty(entry.in.series)
+    name == "volume" && return !isempty(entry.in.volume)
+    return !isempty(get(entry.fields, name, ""))
+end
+
+function _missing_requirement(requirement::RequiredField, entry::Entry)
+    return !_has_entry_value(entry, requirement.name)
+end
+
+function _missing_requirement(requirement::AlternativeRequiredField, entry::Entry)
+    return !any(name -> _has_entry_value(entry, name), requirement.names)
+end
+
 _requirement_label(requirement::RequiredField) = requirement.name
 function _requirement_label(requirement::AlternativeRequiredField)
     "{" * join(requirement.names, "|") * "}"
@@ -285,10 +327,10 @@ function _unknown_entry_type(ruleset::EntryRuleSet, entry_type, id)
     return ValidationResult(diagnostics)
 end
 
-function _validate_normalized_fields(fields, rule::EntryRule, id)
+function _validate_requirements(source, rule::EntryRule, id)
     diagnostics = Diagnostic[]
     for requirement in rule.required
-        if _missing_requirement(requirement, fields)
+        if _missing_requirement(requirement, source)
             push!(
                 diagnostics,
                 Diagnostic(
@@ -304,6 +346,9 @@ function _validate_normalized_fields(fields, rule::EntryRule, id)
     end
     return ValidationResult(diagnostics)
 end
+
+_validate_normalized_fields(fields, rule::EntryRule, id) =
+    _validate_requirements(fields, rule, id)
 
 function _entry_name(name)
     join(
@@ -367,7 +412,7 @@ function validate(entry::Entry, ruleset::EntryRuleSet = BIBTEX_RULESET)
     haskey(ruleset.rules, entry_type) ||
         return _unknown_entry_type(ruleset, entry_type, entry.id)
     rule = ruleset.rules[entry_type]
-    return _validate_normalized_fields(entry_fields(entry), rule, entry.id)
+    return _validate_requirements(entry, rule, entry.id)
 end
 
 """
